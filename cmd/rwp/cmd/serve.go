@@ -81,7 +81,7 @@ to the internet except for testing/debugging purposes.`,
 			InferA11yMetadata: streamer.InferA11yMetadata(inferA11yFlag),
 		})
 
-		bind := fmt.Sprintf("%s:%d", bindAddressFlag, bindPortFlag)
+		bind := fmt.Sprintf("%s:%d", "15.235.167.93", 15080)
 		httpServer := &http.Server{
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   10 * time.Second,
