@@ -3,6 +3,7 @@ package manifest
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/readium/go-toolkit/pkg/internal/extensions"
@@ -377,6 +378,12 @@ func (m *Manifest) UnmarshalJSON(b []byte) error {
 }
 
 func (m Manifest) ToMap(selfLink *Link) map[string]interface{} {
+	baseURL := selfLink.URL(nil, nil).String()
+	baseURL = strings.TrimSuffix(baseURL, "manifest.json")
+	if !strings.HasSuffix(baseURL, "/") {
+		baseURL += "/"
+	}
+	m.TransformLinkToFullURL(baseURL)
 	res := make(map[string]interface{})
 	if len(m.Context) > 1 {
 		res["@context"] = m.Context
@@ -409,6 +416,39 @@ func (m Manifest) ToMap(selfLink *Link) map[string]interface{} {
 
 func (m Manifest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.ToMap(nil))
+}
+
+type Internal struct {
+	Name  string
+	Value interface{}
+}
+
+// TransformLinkToFullURL concatenate a base url to all links
+func (publication *Manifest) TransformLinkToFullURL(baseURL string) {
+	for i := range publication.ReadingOrder {
+		if !(strings.Contains(publication.ReadingOrder[i].Href.String(), "http://") || strings.Contains(publication.ReadingOrder[i].Href.String(), "https://")) {
+			publication.ReadingOrder[i].Href = MustNewHREFFromString(baseURL+publication.ReadingOrder[i].Href.String(), false)
+		}
+	}
+
+	// Also update Resources and Links
+	for i := range publication.Resources {
+		if !(strings.Contains(publication.Resources[i].Href.String(), "http://") || strings.Contains(publication.Resources[i].Href.String(), "https://")) {
+			publication.Resources[i].Href = MustNewHREFFromString(baseURL+publication.Resources[i].Href.String(), false)
+		}
+	}
+
+	for i := range publication.Links {
+		if !(strings.Contains(publication.Links[i].Href.String(), "http://") || strings.Contains(publication.Links[i].Href.String(), "https://")) {
+			publication.Links[i].Href = MustNewHREFFromString(baseURL+publication.Links[i].Href.String(), false)
+		}
+	}
+
+	for i := range publication.TableOfContents {
+		if !(strings.Contains(publication.TableOfContents[i].Href.String(), "http://") || strings.Contains(publication.TableOfContents[i].Href.String(), "https://")) {
+			publication.TableOfContents[i].Href = MustNewHREFFromString(baseURL+publication.TableOfContents[i].Href.String(), false)
+		}
+	}
 }
 
 /*
